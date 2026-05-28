@@ -17,7 +17,7 @@
 
 const CONFIG = {
   // Tempel API key TWELVE DATA kamu di sini:
-  API_KEY: "",
+  API_KEY: "2e17930862544ff2a98735e8bac44bdf",
 
   PROVIDER: "twelvedata",
 
