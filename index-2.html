@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SFX Heatmap — Call / Put Forex</title>
+<meta name="description" content="Heatmap harga forex, emas, dan crypto dengan sinyal Call/Put." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0e14;
+    --panel: rgba(17,23,34,.82);
+    --panel-2: rgba(13,19,28,.82);
+    --line: #1d2735;
+    --text: #e6edf5;
+    --muted: #7d8da3;
+    --call: #15c47e;
+    --put: #ff4d6d;
+    --neutral: #f5b942;
+    --accent: #4d7cff;
+    --glow-call: rgba(21,196,126,.35);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  /* ====== BACKGROUND FOTO ====== */
+  /* Taruh file foto kamu bernama "background.jpg" di folder yang sama.
+     Kalau belum ada, otomatis tampil gradient gelap sebagai cadangan. */
+  .bg-photo {
+    position: fixed; inset: 0; z-index: -2;
+    background-image: url('background.jpg');
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    /* fallback gradient kalau foto belum ada */
+    background-color: #0a0e14;
+  }
+  .bg-overlay {
+    position: fixed; inset: 0; z-index: -1;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(77,124,255,.12), transparent 60%),
+      linear-gradient(180deg, rgba(10,14,20,.78), rgba(10,14,20,.92));
+    backdrop-filter: blur(2px);
+  }
+  .wrap { max-width: 1180px; margin:0 auto; padding: 0 20px; position:relative; z-index:1; }
+
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 26px 0 20px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap; gap:16px;
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .logo {
+    width:42px; height:42px; border-radius:11px;
+    background: linear-gradient(135deg, var(--call), var(--accent));
+    display:grid; place-items:center; font-weight:800; font-size:18px; color:#06110b;
+    box-shadow: 0 6px 24px var(--glow-call);
+  }
+  .brand h1 { font-size:21px; font-weight:800; letter-spacing:-.5px; }
+  .brand h1 span { color: var(--accent); }
+  .brand p { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; letter-spacing:1px; text-transform:uppercase; }
+  .status { display:flex; align-items:center; gap:8px; font-family:'Space Mono',monospace; font-size:12px; color:var(--muted); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--call); box-shadow:0 0 10px var(--call); animation:pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .hero { padding: 34px 0 10px; }
+  .hero h2 { font-size: clamp(28px, 5vw, 46px); font-weight:800; letter-spacing:-1.5px; line-height:1.05; text-shadow:0 2px 20px rgba(0,0,0,.5); }
+  .hero h2 .c { color:var(--call); }
+  .hero h2 .p { color:var(--put); }
+  .hero p { color:#c2cddb; margin-top:12px; max-width:560px; font-weight:300; font-size:15px; }
+
+  .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:28px 0 18px; }
+  .tabs { display:flex; gap:6px; background:var(--panel); border:1px solid var(--line); padding:5px; border-radius:12px; backdrop-filter:blur(8px); }
+  .tab {
+    border:none; background:transparent; color:var(--muted); cursor:pointer;
+    padding:8px 16px; border-radius:8px; font-family:'Sora'; font-weight:600; font-size:13px; transition:.2s;
+  }
+  .tab.active { background:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(77,124,255,.4); }
+  .refresh {
+    margin-left:auto; display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line); color:var(--text);
+    padding:9px 16px; border-radius:11px; cursor:pointer; font-family:'Space Mono',monospace; font-size:12px; transition:.2s; backdrop-filter:blur(8px);
+  }
+  .refresh:hover { border-color:var(--accent); }
+  .refresh.spin svg { animation:rot .8s linear infinite; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+
+  /* ====== HEATMAP GRID ====== */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; padding-bottom:40px; }
+  .cell {
+    border-radius:14px; padding:16px; position:relative; overflow:hidden; cursor:pointer;
+    border:1px solid var(--line); transition:.25s; opacity:0; transform:translateY(14px) scale(.98);
+    animation:rise .45s forwards; min-height:130px;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  @keyframes rise { to { opacity:1; transform:none; } }
+  .cell:hover { transform:translateY(-3px) scale(1.02); z-index:2; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  /* warna heatmap berdasarkan sinyal & intensitas (di-set inline via JS) */
+
+  .cell .sym { font-size:16px; font-weight:800; letter-spacing:-.3px; }
+  .cell .nm  { font-size:10px; color:rgba(255,255,255,.65); font-weight:400; margin-top:1px; }
+  .cell .pr  { font-family:'Space Mono',monospace; font-size:20px; font-weight:700; margin-top:8px; letter-spacing:-.5px; }
+  .cell .row { display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px; }
+  .cell .sig { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; }
+  .cell .chg { font-family:'Space Mono',monospace; font-size:12px; }
+
+  .note {
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--neutral);
+    border-radius:12px; padding:16px 18px; margin:10px 0 30px; font-size:13px; color:var(--muted); line-height:1.6; backdrop-filter:blur(8px);
+  }
+  .note b { color:var(--neutral); }
+  footer { border-top:1px solid var(--line); padding:24px 0 40px; color:var(--muted); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-family:'Space Mono',monospace; }
+  footer a { color:var(--accent); text-decoration:none; }
+
+  .config-warn {
+    display:none; background:rgba(245,185,66,.12); border:1px solid rgba(245,185,66,.35);
+    color:var(--neutral); border-radius:12px; padding:14px 18px; margin:18px 0; font-size:13px; line-height:1.6; backdrop-filter:blur(8px);
+  }
+  .config-warn code { background:rgba(0,0,0,.4); padding:2px 7px; border-radius:5px; font-family:'Space Mono',monospace; }
+
+  /* legend */
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin:0 0 18px; font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .legend i { width:14px; height:14px; border-radius:4px; display:inline-block; }
+</style>
+</head>
+<body>
+<div class="bg-photo"></div>
+<div class="bg-overlay"></div>
+
+<!-- elemen audio: taruh file "click.mp3" kamu di folder yang sama -->
+<audio id="clickSound" src="click.mp3" preload="auto"></audio>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="logo">SFX</div>
+      <div>
+        <h1>SFX <span>Heatmap</span></h1>
+        <p>Call / Put Forex Map</p>
+      </div>
+    </div>
+    <div class="status"><span class="dot"></span> <span id="clock">--:--:--</span> WIB</div>
+  </header>
+
+  <section class="hero">
+    <h2>Heatmap <span class="c">Call</span> / <span class="p">Put</span></h2>
+    <p>Peta panas pergerakan forex, emas, dan crypto. Warna hijau = sinyal Call, merah = Put, makin pekat makin kuat. Edukasi, bukan rekomendasi finansial.</p>
+  </section>
+
+  <div class="config-warn" id="configWarn">
+    ⚙️ <b>Mode Demo aktif.</b> Data simulasi. Isi <code>API_KEY</code> Twelve Data di <code>config.js</code> untuk harga live.
+  </div>
+
+  <div class="controls">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-cat="all">Semua</button>
+      <button class="tab" data-cat="forex">Forex</button>
+      <button class="tab" data-cat="metal">Emas</button>
+      <button class="tab" data-cat="crypto">Crypto</button>
+    </div>
+    <button class="refresh" id="refreshBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      REFRESH
+    </button>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:#15c47e"></i> CALL (naik)</span>
+    <span><i style="background:#f5b942"></i> NETRAL</span>
+    <span><i style="background:#ff4d6d"></i> PUT (turun)</span>
+    <span>· makin pekat = sinyal makin kuat</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="note">
+    <b>⚠️ Disclaimer.</b> Sinyal Call/Put dihitung dari momentum sederhana untuk edukasi. Bukan nasihat investasi. Trading berisiko tinggi.
+  </div>
+
+  <footer>
+    <span>© <span id="year"></span> SFX Heatmap</span>
+    <span>Data: <span id="src">Demo Mode</span></span>
+  </footer>
+
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
