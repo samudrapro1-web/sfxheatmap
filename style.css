@@ -1,0 +1,146 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial, sans-serif;
+}
+
+body{
+  background:#0d1117;
+  color:white;
+}
+
+.container{
+  padding:20px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.topbar h1{
+  font-size:22px;
+  color:#00ffcc;
+}
+
+select{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#161b22;
+  color:white;
+}
+
+.price-box{
+  background:#161b22;
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.label{
+  color:#999;
+  margin-bottom:10px;
+}
+
+#price{
+  font-size:40px;
+  font-weight:bold;
+  color:#00ffcc;
+}
+
+.signal-box{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+  gap:15px;
+}
+
+.call-btn,
+.put-btn{
+  width:140px;
+  height:140px;
+  border:none;
+  border-radius:30px;
+  font-size:30px;
+  font-weight:bold;
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.call-btn{
+  background:linear-gradient(135deg,#00c853,#00ff95);
+}
+
+.put-btn{
+  background:linear-gradient(135deg,#ff1744,#ff5252);
+}
+
+.call-btn:active,
+.put-btn:active{
+  transform:scale(0.95);
+}
+
+.middle-info{
+  text-align:center;
+}
+
+#timer{
+  font-size:40px;
+  margin-bottom:5px;
+}
+
+.percent-box{
+  display:flex;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.buy,
+.sell{
+  flex:1;
+  background:#161b22;
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+}
+
+.buy h2{
+  color:#00ff95;
+  margin-top:10px;
+}
+
+.sell h2{
+  color:#ff5252;
+  margin-top:10px;
+}
+
+#tradingview_chart{
+  height:500px;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+@media(max-width:768px){
+
+  .signal-box{
+    flex-direction:column;
+  }
+
+  .call-btn,
+  .put-btn{
+    width:100%;
+    height:90px;
+  }
+
+  #price{
+    font-size:30px;
+  }
+
+}
